@@ -48,3 +48,174 @@ This demo showcases four partial schemas running as federated microservices. Eac
 To see the query plan when running queries against the gateway, click on the `Query Plan` tab in the bottom right hand corner of [GraphQL Playground](http://localhost:4000)
 
 To learn more about Apollo Federation, check out the [docs](https://www.apollographql.com/docs/apollo-server/federation/introduction)
+
+### Federated Combined Schema and Queries
+If you browser to http://localhost:4000 you should be able to query.
+
+Run any of these example queries as [http://localhost:4000/playground](http://localhost:4000/playground)
+
+```
+query MyReviews{
+  me {
+    username
+    reviews {
+      body
+      product {
+        name
+        upc
+      }
+    }
+  }
+}
+```
+
+```
+query TopProducts{
+  topProducts{
+    name
+    reviews{
+      author{
+        name
+      }
+    }
+  }
+}
+```
+The combined federated schema is this:
+
+```graphql
+type Product {
+upc: String!
+name: String
+price: Int
+weight: Int
+reviews: [Review]
+inStock: Boolean
+shippingEstimate: Int
+}
+
+type Query {
+me: User
+topProducts(first: Int = 5): [Product]
+}
+
+type Review {
+id: ID!
+body: String
+author: User
+product: Product
+}
+
+type User {
+id: ID!
+name: String
+username: String
+reviews: [Review]
+}
+```
+### 
+
+### DGraph
+
+This PR extends support for the `Apollo Federation`.
+
+## Support for Apollo federation directives
+Our current implementation allows support for 3 directives, namely @key, @extends and @external.
+
+### @key directive.
+This directive is used on any type and it takes one field argument inside it which is called @key field. There are some limitations on how to use @key directives.
+
+* User can define @key directive only once for a type, Support for multiple key types is not provided yet.
+* Since the @key field act as a foreign key to resolve entities from the service where it is extended, the field provided as an argument inside @key directive should be of `ID` type or having `@id` directive on it. For example:-
+
+```
+type User @key(fields: "id") {
+   id: ID!
+  name: String
+}
+```
+
+### @extends directive.
+@extends directive is provided to give support for extended definitions. Suppose the above defined `User` type is defined in some service. Users can extend it to our GraphQL service by using this keyword.
+
+```
+type User @key(fields: "id") @extends{
+   id: ID! @external
+  products: [Product]
+}
+```
+
+### @external directive.
+@external directive means that the given field is not stored on this service. It is stored in some other service. This keyword can only be used on extended type definitions. Like it is used above on the `id` field.
+
+## Generated Queries and mutations
+In this section, we will mention what all the queries and mutations will be available to individual service and to the apollo `gateway`. We will take the given schema as our example:-
+
+```
+type Mission @key(fields: "id") {
+    id: ID!
+    crew: [Astronaut]
+    designation: String!
+    startDate: String
+    endDate: String
+}
+
+type Astronaut @key(fields: "id") @extends {
+    id: ID! @external
+    missions: [Mission]
+}
+```
+
+The queries and mutations which are exposed to the gateway are:-
+
+```
+type Query {
+	getMission(id: ID!): Mission
+	queryMission(filter: MissionFilter, order: MissionOrder, first: Int, offset: Int): [Mission]
+	aggregateMission(filter: MissionFilter): MissionAggregateResult
+}
+
+type Mutation {
+	addMission(input: [AddMissionInput!]!): AddMissionPayload
+	updateMission(input: UpdateMissionInput!): UpdateMissionPayload
+	deleteMission(filter: MissionFilter!): DeleteMissionPayload
+	addAstronaut(input: [AddAstronautInput!]!): AddAstronautPayload
+	updateAstronaut(input: UpdateAstronautInput!): UpdateAstronautPayload
+	deleteAstronaut(filter: AstronautFilter!): DeleteAstronautPayload
+}
+```
+
+The queries for `Astronaut` are not exposed to the gateway since it will be resolved through the `_entities` resolver. Although these queries will be available on the Dgraph GraphQL endpoint.
+
+# Mutation for `extended` types
+if we want to add an object of Astronaut type which is @Extended in this service.
+The mutation `addAstronaut` takes `AddAstronautInput` which is generated as:-
+
+```
+input AddAstronautInput {
+	id: ID!
+	missions: [MissionRef]
+}
+```
+
+Even though the `id` field is of `ID` type which should be ideally be generated internally by Dgraph, In this case, it should be provided as input. The reason for this is because of the unavailability of `federated mutations`, the user should provide the value of `id` same as the value present in the GraphQL service where the type `Astronaut` is defined.
+For example, let's take that the type Astronaut is defined in some other service `AstronautService` as:-
+
+```
+type Astronaut @key(fields: "id") {
+    id: ID! 
+    name: String!
+}
+```
+
+When adding an Object of `Astronaut` type, first it should be added into `AstronautService` and then the `addAstronaut` mutation should be called and value of `id` provided as an argument must be equal to the value in `AstronautService`.
+
+# Gateway Supported Directives.
+Due to the bug in the federation library (see [here](https://github.com/apollographql/federation/issues/346)), some directives are removed from the schema `SDL` which is returned to the gateway in response to the `_service` query.
+Those directives are `@custom`, `@generate`, and `@auth`.
+You can still use these directives in your GraphQL schema and they will work as desired but the gateway will unaware of this.
+
+This change is [<img alt="Reviewable" height="34" src="https://camo.githubusercontent.com/a8b5f6726de4903e6ce89df24ad596326aa4f49974dbb99137f93e280f30421c/68747470733a2f2f72657669657761626c652e696f2f7265766965775f627574746f6e2e737667">](https://reviewable.io/reviews/dgraph-io/dgraph/7275)
+
+
+

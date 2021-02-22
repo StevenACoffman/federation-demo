@@ -112,9 +112,7 @@ func gatewayRunner(stdoutBuf *bytes.Buffer, stderrBuf *bytes.Buffer) func() erro
 	}
 }
 
-
 func getStopSignalsChannel() chan os.Signal {
-
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel,
 		os.Interrupt,    // interrupt is syscall.SIGINT, Ctrl+C
