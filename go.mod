@@ -5,6 +5,9 @@ go 1.14
 require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/agnivade/levenshtein v1.1.0 // indirect
+	github.com/ardanlabs/dgraph v0.0.0-20201009121658-546184d859d2
+	github.com/ardanlabs/graphql v1.4.2
+	github.com/google/go-cmp v0.5.4
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/mitchellh/mapstructure v1.4.0 // indirect

@@ -50,7 +50,7 @@ To see the query plan when running queries against the gateway, click on the `Qu
 To learn more about Apollo Federation, check out the [docs](https://www.apollographql.com/docs/apollo-server/federation/introduction)
 
 ### Federated Combined Schema and Queries
-If you browser to http://localhost:4000 you should be able to query.
+If you open a browser to http://localhost:4000 you should be able to run two different top level queries.
 
 Run any of these example queries as [http://localhost:4000/playground](http://localhost:4000/playground)
 
@@ -116,6 +116,13 @@ reviews: [Review]
 ### 
 
 ### DGraph
+https://dgraph.io/docs/get-started/
+
+Apollo Federation is now merged and available in the master branch of Dgraph. This is available via Docker Hub using the `dgraph/dgraph:master` Docker image. If you want to use a stable image tag (the master image always updates to the latest master), you can use `dgraph/dgraph:3642fed5`.
+
+You can read more about how to use Apollo Federation in the docs currently in the description of PR #7275. This adds support for the @key, @extends, and @external directives.
+
+This is slated to be released in the official Dgraph v21.03 version in March. Please do let us know if something doesn't work for you or if there's anything we can improve.
 
 This PR extends support for the `Apollo Federation`.
 
@@ -215,7 +222,5 @@ Due to the bug in the federation library (see [here](https://github.com/apollogr
 Those directives are `@custom`, `@generate`, and `@auth`.
 You can still use these directives in your GraphQL schema and they will work as desired but the gateway will unaware of this.
 
-This change is [<img alt="Reviewable" height="34" src="https://camo.githubusercontent.com/a8b5f6726de4903e6ce89df24ad596326aa4f49974dbb99137f93e280f30421c/68747470733a2f2f72657669657761626c652e696f2f7265766965775f627574746f6e2e737667">](https://reviewable.io/reviews/dgraph-io/dgraph/7275)
-
-
+This change is
 
